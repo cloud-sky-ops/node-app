@@ -1,4 +1,6 @@
 npm init -y --> adds package.json
 npm install express --> adds package-lock.json and node-modules/
+minikube image load <image-name> to run docker images locally
+
 
 
