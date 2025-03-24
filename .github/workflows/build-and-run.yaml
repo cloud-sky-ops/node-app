@@ -28,6 +28,13 @@ jobs:
           sudo tar -C /usr/local/bin -xzf "crictl-$VERSION-linux-amd64.tar.gz"
           rm "crictl-$VERSION-linux-amd64.tar.gz"
 
+      - name: Install cri-dockerd
+        run: |
+          VERSION="v0.3.16"
+          curl -LO "https://github.com/Mirantis/cri-dockerd/releases/download/$VERSION/cri-dockerd-$VERSION.amd64.tgz"
+          sudo tar -C /usr/local/bin -xzf "cri-dockerd-$VERSION.amd64.tgz"
+          rm "cri-dockerd-$VERSION.amd64.tgz"
+
       - name: Install Minikube
         run: |
           curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
