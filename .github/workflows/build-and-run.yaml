@@ -1,0 +1,42 @@
+name: Build and Run Image
+
+on:
+  workflow_dispatch:
+  push:
+    branches: main
+
+env:
+  DOCKER_IMAGE_NAME: "node-app-project"
+  DOCKER_IMAGE_TAG: "S{{ github.sha }}"
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build Dockerfile
+        run: docker build -t $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG .
+
+      - name: Install Minikube
+        run: |
+          curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+          sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+      - name: Start Minikube
+        run: |
+          sudo minikube start --driver=none
+          sudo minikube status
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.31.0' # default is latest stable
+        id: install
+
+      - name: Run using kubectl command
+        run: |
+          kubectl get nodes
+          kubectl apply -f deployment.yaml
+          sleep 20
+          kubectl get all
