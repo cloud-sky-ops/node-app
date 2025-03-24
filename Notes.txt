@@ -9,5 +9,10 @@ Part of: netfilter/iptables framework in Linux
 Command-line tool: conntrack
 Kernel module: nf_conntrack
 
+crictl is needed to interact with container runtimes (like containerd or CRI-O) in Kubernetes.
+Minikube requires crictl when using the none driver because it directly runs Kubernetes processes on the host.
+
+Since Minikube uses Docker as the container runtime, we must install cri-dockerd, which acts as an interface between Kubernetes and Docker.
+
 
 
