@@ -18,17 +18,27 @@ jobs:
       - name: Build Dockerfile
         run: docker build -t $DOCKER_IMAGE_NAME:${{ github.sha }} .
 
-      # - name: Install Dependencies for Minikube
-      #   run: sudo apt-get update && sudo apt-get install -y conntrack
+      - name: Install Dependencies for Minikube
+        run: sudo apt-get update && sudo apt-get install -y conntrack
 
       - name: Install Minikube
         run: |
           curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
           sudo install minikube-linux-amd64 /usr/local/bin/minikube
 
+      - name: Ensure conntrack is in root path
+        run: sudo ln -s "$(which conntrack)" /usr/bin/conntrack || true
+
+      - name: Verify conntrack installation
+        run: |
+          which conntrack
+          sudo which conntrack
+          sudo conntrack --version
+
       - name: Start Minikube
         run: |
-          minikube start --driver=none
+          echo "Path: $PATH"
+          sudo env PATH=$PATH minikube start --driver=none
           minikube status
 
       - name: Install kubectl
