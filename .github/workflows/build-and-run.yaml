@@ -18,63 +18,71 @@ jobs:
       - name: Build Dockerfile
         run: docker build -t $DOCKER_IMAGE_NAME:${{ github.sha }} .
 
-      - name: Install Dependencies for Minikube
-        run: sudo apt-get update && sudo apt-get install -y conntrack
+      # - name: Install Dependencies for Minikube
+      #   run: sudo apt-get update && sudo apt-get install -y conntrack
 
-      - name: Install crictl
-        run: |
-          VERSION="v1.28.0"
-          curl -LO "https://github.com/kubernetes-sigs/cri-tools/releases/download/$VERSION/crictl-$VERSION-linux-amd64.tar.gz"
-          sudo tar -C /usr/local/bin -xzf "crictl-$VERSION-linux-amd64.tar.gz"
-          rm "crictl-$VERSION-linux-amd64.tar.gz"
+      # - name: Install crictl
+      #   run: |
+      #     VERSION="v1.28.0"
+      #     curl -LO "https://github.com/kubernetes-sigs/cri-tools/releases/download/$VERSION/crictl-$VERSION-linux-amd64.tar.gz"
+      #     sudo tar -C /usr/local/bin -xzf "crictl-$VERSION-linux-amd64.tar.gz"
+      #     rm "crictl-$VERSION-linux-amd64.tar.gz"
 
-      - name: Install cri-dockerd
-        run: | 
-          CRI_DOCKERD_VERSION=$(curl -s https://api.github.com/repos/Mirantis/cri-dockerd/releases/latest | jq -r '.tag_name' | sed 's/v//')
-          echo "CRI_DOCKERD_VERSION: $CRI_DOCKERD_VERSION"
-          curl -LO "https://github.com/Mirantis/cri-dockerd/releases/download/v${CRI_DOCKERD_VERSION}/cri-dockerd-${CRI_DOCKERD_VERSION}.amd64.tgz"
-          sudo tar -C /usr/local/bin -xzf "cri-dockerd-${CRI_DOCKERD_VERSION}.amd64.tgz"
-          rm "cri-dockerd-${CRI_DOCKERD_VERSION}.amd64.tgz"
-          sudo chmod +x /usr/local/bin/cri-dockerd
+      # - name: Install cri-dockerd
+      #   run: | 
+      #     CRI_DOCKERD_VERSION=$(curl -s https://api.github.com/repos/Mirantis/cri-dockerd/releases/latest | jq -r '.tag_name' | sed 's/v//')
+      #     echo "CRI_DOCKERD_VERSION: $CRI_DOCKERD_VERSION"
+      #     curl -LO "https://github.com/Mirantis/cri-dockerd/releases/download/v${CRI_DOCKERD_VERSION}/cri-dockerd-${CRI_DOCKERD_VERSION}.amd64.tgz"
+      #     sudo tar -C /usr/local/bin -xzf "cri-dockerd-${CRI_DOCKERD_VERSION}.amd64.tgz"
+      #     rm "cri-dockerd-${CRI_DOCKERD_VERSION}.amd64.tgz"
+      #     sudo chmod +x /usr/local/bin/cri-dockerd
 
-      - name: Ensure cri-dockerd is in Root Path
-        run: |
-          sudo ln -sf /usr/local/bin/cri-dockerd /usr/bin/cri-dockerd || true
-          ls -lh /usr/bin/cri-dockerd
-          which cri-dockerd
+      # - name: Ensure cri-dockerd is in Root Path
+      #   run: |
+      #     sudo ln -sf /usr/local/bin/cri-dockerd /usr/bin/cri-dockerd || true
+      #     ls -lh /usr/bin/cri-dockerd
+      #     which cri-dockerd
 
-      - name: Install Minikube
-        run: |
-          curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-          sudo install minikube-linux-amd64 /usr/local/bin/minikube
+      # - name: Install Minikube
+      #   run: |
+      #     curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+      #     sudo install minikube-linux-amd64 /usr/local/bin/minikube
 
-      - name: Ensure dependencies are in root path
-        run: |
-          sudo ln -s "$(which conntrack)" /usr/bin/conntrack || true
-          sudo ln -s "$(which crictl)" /usr/bin/crictl || true
-          # sudo ln -s "$(which cri-dockerd)" /usr/bin/cri-dockerd || true
+      # - name: Ensure dependencies are in root path
+      #   run: |
+      #     sudo ln -s "$(which conntrack)" /usr/bin/conntrack || true
+      #     sudo ln -s "$(which crictl)" /usr/bin/crictl || true
+      #     # sudo ln -s "$(which cri-dockerd)" /usr/bin/cri-dockerd || true
 
-      - name: Verify conntrack installation
-        run: |
-          which conntrack
-          sudo which conntrack
-          sudo conntrack --version
+      # - name: Verify conntrack installation
+      #   run: |
+      #     which conntrack
+      #     sudo which conntrack
+      #     sudo conntrack --version
 
-      - name: Start Minikube
-        run: |
-          echo "Path: $PATH"
-          sudo env PATH=$PATH minikube start --driver=none
-          minikube status
+      # - name: Start Minikube
+      #   run: |
+      #     echo "Path: $PATH"
+      #     sudo env PATH=$PATH minikube start --driver=none
+      #     minikube status
 
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: 'v1.31.0' # default is latest stable
-        id: install
+      # - name: Install kubectl
+      #   uses: azure/setup-kubectl@v4
+      #   with:
+      #     version: 'v1.31.0' # default is latest stable
+      #   id: install
+
+      - name: Start minikube
+        uses: medyagh/setup-minikube@latest
+
+      - name: Try the cluster!
+        run: kubectl get pods -A
+
+      - name: Load image to minikube
+        run: minikube image load $DOCKER_IMAGE_NAME:${{ github.sha }}
 
       - name: Run using kubectl command
         run: |
-          kubectl get nodes
           kubectl apply -f deployment.yaml
-          sleep 20
+          sleep 30
           kubectl get all
