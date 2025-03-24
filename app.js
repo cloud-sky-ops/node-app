@@ -7,5 +7,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`App running on port ${port}`);
+  console.log(`Hello from the other side, you've reached pod logs. Your app is running on port ${port}`);
 });
