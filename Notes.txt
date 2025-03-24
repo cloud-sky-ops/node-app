@@ -2,5 +2,18 @@ npm init -y --> adds package.json
 npm install express --> adds package-lock.json and node-modules/
 minikube image load <image-name> to run docker images locally
 
+The conntrack package is a network connection tracking tool that interacts with netfilter (Linux's built-in firewall system). It helps manage stateful packet filtering and connection tracking for NAT (Network Address Translation) and firewall rules.
+
+Full Name: Connection Tracking Utility
+Part of: netfilter/iptables framework in Linux
+Command-line tool: conntrack
+Kernel module: nf_conntrack
+
+crictl is needed to interact with container runtimes (like containerd or CRI-O) in Kubernetes.
+Minikube requires crictl when using the none driver because it directly runs Kubernetes processes on the host.
+
+Since Minikube uses Docker as the container runtime, we must install cri-dockerd, which acts as an interface between Kubernetes and Docker.
+Install cri-dockerd manually: https://mirantis.github.io/cri-dockerd/usage/install-manually/
+
 
 

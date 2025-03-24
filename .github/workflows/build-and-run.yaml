@@ -7,7 +7,7 @@ on:
 
 env:
   DOCKER_IMAGE_NAME: "node-app-project"
-  DOCKER_IMAGE_TAG: "S{{ github.sha }}"
+
 jobs:
   build-and-run:
     runs-on: ubuntu-latest
@@ -15,28 +15,37 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Build Dockerfile
-        run: docker build -t $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG .
-
-      - name: Install Minikube
+      - name: Generate Image Tag
         run: |
-          curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-          sudo install minikube-linux-amd64 /usr/local/bin/minikube
+          IMAGE_NAME="$DOCKER_IMAGE_NAME:${{ github.sha }}"
+          echo "IMAGE_NAME=$IMAGE_NAME"
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
-      - name: Start Minikube
+      - name: Build Docker image
+        run: docker build -t ${{ env.IMAGE_NAME }} .
+          
+      - name: Start minikube
+        uses: medyagh/setup-minikube@latest
+
+      - name: Load image to minikube
         run: |
-          sudo minikube start --driver=none
-          sudo minikube status
-
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: 'v1.31.0' # default is latest stable
-        id: install
+          minikube image load ${{ env.IMAGE_NAME }}
+          echo -e "Loaded image ${{ env.IMAGE_NAME }} to minikube.\nListing all images:"
+          minikube image ls
 
       - name: Run using kubectl command
         run: |
-          kubectl get nodes
+          sed -i "s/node-app:1.0/${{ env.IMAGE_NAME }}/" deployment.yaml
           kubectl apply -f deployment.yaml
-          sleep 20
+          sleep 30
           kubectl get all
+          POD_NAME=$(kubectl get pod --selector app=node-app -o=jsonpath='{.items[0].metadata.name}{"\n"}')
+          kubectl describe pod $POD_NAME
+      
+      - name: Print pod logs
+        run: |
+          POD_NAME=$(kubectl get pod --selector app=node-app -o=jsonpath='{.items[0].metadata.name}{"\n"}')
+          echo "-------------------------------------------------------------------------"
+          echo "POD LOG:"          
+          kubectl logs $POD_NAME
+          echo "-------------------------------------------------------------------------"
