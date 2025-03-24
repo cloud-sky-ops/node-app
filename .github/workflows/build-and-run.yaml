@@ -15,26 +15,37 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Build Dockerfile
-        run: docker build -t $DOCKER_IMAGE_NAME:${{ github.sha }} .
+      - name: Build Docker Image
+        run: |
+          IMAGE_NAME="$DOCKER_IMAGE_NAME:${{ github.sha }}"
+          echo "IMAGE_NAME=$IMAGE_NAME"
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+          docker build -t ${{ env.IMAGE_NAME }} .
 
       - name: Start minikube
         uses: medyagh/setup-minikube@latest
 
       - name: Load image to minikube
         run: |
-          minikube image ls
-          minikube image load $DOCKER_IMAGE_NAME:${{ github.sha }}
+          minikube image load ${{ env.IMAGE_NAME }}
           echo "Loaded image"
           minikube image ls
 
       - name: Run using kubectl command
         run: |
-          IMAGE_NAME="$DOCKER_IMAGE_NAME:${{ github.sha }}"
-          sed -i "s/node-app:1.0/$IMAGE_NAME/" deployment.yaml
+          sed -i "s/node-app:1.0/${{ env.IMAGE_NAME }}/" deployment.yaml
           kubectl apply -f deployment.yaml
-          sleep 20
+          sleep 30
           kubectl get all
-          kubectl describe pod $(kubectl get pod --selector app=node-app -o=jsonpath='{.items[0].metadata.name}{"\n"}')
+          POD_NAME=$(kubectl get pod --selector app=node-app -o=jsonpath='{.items[0].metadata.name}{"\n"}')
+          kubectl describe pod $POD_NAME
+      
+      - name: Print pod and container log
+        run: |
           echo "-------------------------------------------------------------------------"
-          kubectl logs $(kubectl get pod --selector app=node-app -o=jsonpath='{.items[0].metadata.name}{"\n"}')
+          echo "POD LOG:"          
+          kubectl logs $POD_NAME
+          echo "-------------------------------------------------------------------------"
+          echo "CONTAINER LOG"
+          kubectl exec -it $(kubectl get pod --selector app=node-app -o=jsonpath='{.items[0].metadata.name}{"\n"}') -- curl http://localhost:3000
+          echo "-------------------------------------------------------------------------"
