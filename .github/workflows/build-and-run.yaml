@@ -15,7 +15,8 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: docker build -t $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG
+      - name: Build Dockerfile
+        run: docker build -t $DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG .
 
       - name: Install Minikube
         run: |
