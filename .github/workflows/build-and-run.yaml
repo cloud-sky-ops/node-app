@@ -30,7 +30,7 @@ jobs:
       - name: Load image to minikube
         run: |
           minikube image load ${{ env.IMAGE_NAME }}
-          echo "Loaded image"
+          echo -e "Loaded image ${{ env.IMAGE_NAME }} to minikube.\nListing all images:"
           minikube image ls
 
       - name: Run using kubectl command
@@ -44,6 +44,7 @@ jobs:
       
       - name: Print pod and container log
         run: |
+          POD_NAME=$(kubectl get pod --selector app=node-app -o=jsonpath='{.items[0].metadata.name}{"\n"}')
           echo "-------------------------------------------------------------------------"
           echo "POD LOG:"          
           kubectl logs $POD_NAME
