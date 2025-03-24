@@ -15,13 +15,15 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Build Docker Image
+      - name: Generate Image Tag
         run: |
           IMAGE_NAME="$DOCKER_IMAGE_NAME:${{ github.sha }}"
           echo "IMAGE_NAME=$IMAGE_NAME"
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
-          docker build -t ${{ env.IMAGE_NAME }} .
 
+      - name: Build Docker image
+        run: docker build -t ${{ env.IMAGE_NAME }} .
+          
       - name: Start minikube
         uses: medyagh/setup-minikube@latest
 
