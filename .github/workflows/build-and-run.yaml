@@ -30,8 +30,11 @@ jobs:
 
       - name: Run using kubectl command
         run: |
+          IMAGE_NAME="$DOCKER_IMAGE_NAME:${{ github.sha }}"
+          sed -i "s/node-app:1.0/$IMAGE_NAME/" deployment.yaml
           kubectl apply -f deployment.yaml
           sleep 20
           kubectl get all
           kubectl describe pod $(kubectl get pod --selector app=node-app -o=jsonpath='{.items[0].metadata.name}{"\n"}')
-          # kubectl logs $(kubectl get pod --selector app=node-app -o=jsonpath='{.items[0].metadata.name}{"\n"}')
+          echo "-------------------------------------------------------------------------"
+          kubectl logs $(kubectl get pod --selector app=node-app -o=jsonpath='{.items[0].metadata.name}{"\n"}')
