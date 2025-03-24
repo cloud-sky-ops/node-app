@@ -30,11 +30,11 @@ jobs:
 
       - name: Install cri-dockerd
         run: |
-          VERSION="v0.3.16"
-          curl -LO "https://github.com/Mirantis/cri-dockerd/releases/download/$VERSION/cri-dockerd-$VERSION-amd64.tar.gz"
-          sudo tar -C /usr/local/bin -xzf "cri-dockerd-$VERSION-amd64.tar.gz"
-          rm "cri-dockerd-$VERSION-amd64.tar.gz"
-          sudo chmod +x /usr/local/bin/cri-dockerd
+          git clone https://github.com/Mirantis/cri-dockerd.git
+          cd cri-dockerd
+          sudo make install
+          cd ..
+          rm -rf cri-dockerd
 
       - name: Install Minikube
         run: |
