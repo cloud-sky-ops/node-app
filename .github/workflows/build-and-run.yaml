@@ -28,13 +28,13 @@ jobs:
           sudo tar -C /usr/local/bin -xzf "crictl-$VERSION-linux-amd64.tar.gz"
           rm "crictl-$VERSION-linux-amd64.tar.gz"
 
-      - name: Install cri-dockerd
+      - name: Install cri-dockerd manually
         run: |
-          CRI_DOCKERD_VERSION=$(curl -s https://api.github.com/repos/Mirantis/cri-dockerd/releases/latest | jq -r '.tag_name')
-          curl -LO "https://github.com/Mirantis/cri-dockerd/releases/download/${CRI_DOCKERD_VERSION}/cri-dockerd-${CRI_DOCKERD_VERSION}-amd64.tar.gz"
-          sudo tar -C /usr/local/bin -xzf "cri-dockerd-${CRI_DOCKERD_VERSION}-amd64.tar.gz"
-          rm "cri-dockerd-${CRI_DOCKERD_VERSION}-amd64.tar.gz"
-          sudo chmod +x /usr/local/bin/cri-dockerd
+          install -o root -g root -m 0755 cri-dockerd /usr/local/bin/cri-dockerd
+          install packaging/systemd/* /etc/systemd/system
+          sed -i -e 's,/usr/bin/cri-dockerd,/usr/local/bin/cri-dockerd,' /etc/systemd/system/cri-docker.service
+          systemctl daemon-reload
+          systemctl enable --now cri-docker.socket
 
       - name: Install Minikube
         run: |

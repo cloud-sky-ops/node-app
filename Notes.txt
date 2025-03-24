@@ -13,6 +13,7 @@ crictl is needed to interact with container runtimes (like containerd or CRI-O) 
 Minikube requires crictl when using the none driver because it directly runs Kubernetes processes on the host.
 
 Since Minikube uses Docker as the container runtime, we must install cri-dockerd, which acts as an interface between Kubernetes and Docker.
+Install cri-dockerd manually: https://mirantis.github.io/cri-dockerd/usage/install-manually/
 
 
 
