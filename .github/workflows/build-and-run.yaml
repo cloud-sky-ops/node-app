@@ -42,7 +42,7 @@ jobs:
           POD_NAME=$(kubectl get pod --selector app=node-app -o=jsonpath='{.items[0].metadata.name}{"\n"}')
           kubectl describe pod $POD_NAME
       
-      - name: Print pod and container log
+      - name: Print pod logs
         run: |
           POD_NAME=$(kubectl get pod --selector app=node-app -o=jsonpath='{.items[0].metadata.name}{"\n"}')
           echo "-------------------------------------------------------------------------"
