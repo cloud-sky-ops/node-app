@@ -39,7 +39,7 @@ jobs:
 
       - name: Ensure cri-dockerd is in Root Path
         run: |
-          sudo ln -sf /usr/local/bin/cri-dockerd /usr/bin/cri-dockerd
+          sudo ln -sf /usr/local/bin/cri-dockerd /usr/bin/cri-dockerd || true
           ls -lh /usr/bin/cri-dockerd
           which cri-dockerd
 
