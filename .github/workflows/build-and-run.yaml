@@ -33,16 +33,31 @@ jobs:
           echo -e "Loaded image ${{ env.IMAGE_NAME }} to minikube.\nListing all images:"
           minikube image ls
 
-      - name: Run using kubectl command
+      - name: Setup Helm
+        uses: azure/setup-helm@v4.3.0
+        with:
+          version: '3.13.1' # default is latest (stable)
+
+      - name: Print rendered manifests in logs
         run: |
-          sed -i "s/node-app:1.0/${{ env.IMAGE_NAME }}/" deployment.yaml
-          kubectl apply -f deployment.yaml
+          helm template node-app-helm/ \
+          --set image.tag="${{ github.sha }}" \ #dynamically pass the latest tag
+          --set image.repository="$DOCKER_IMAGE_NAME"
+
+      - name: Install helm chart
+        run: |
+          helm install testing-on-minikube node-app-helm/ \
+          --set image.tag="${{ github.sha }}" \
+          --set image.repository="$DOCKER_IMAGE_NAME"
+
+      - name: Run kubectl commands for validation
+        run: |
           sleep 30
           kubectl get all
           POD_NAME=$(kubectl get pod --selector app=node-app -o=jsonpath='{.items[0].metadata.name}{"\n"}')
           kubectl describe pod $POD_NAME
       
-      - name: Print pod logs
+      - name: Print pod logs in console
         run: |
           POD_NAME=$(kubectl get pod --selector app=node-app -o=jsonpath='{.items[0].metadata.name}{"\n"}')
           echo "-------------------------------------------------------------------------"
