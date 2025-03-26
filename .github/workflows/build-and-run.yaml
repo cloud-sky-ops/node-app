@@ -41,7 +41,7 @@ jobs:
       - name: Print rendered manifests in logs
         run: |
           helm template node-app-helm/ \
-          --set image.tag="${{ github.sha }}" \ #dynamically pass the latest tag
+          --set image.tag="${{ github.sha }}" \
           --set image.repository="$DOCKER_IMAGE_NAME"
 
       - name: Install helm chart
