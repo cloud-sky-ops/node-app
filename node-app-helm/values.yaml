@@ -99,7 +99,7 @@ tolerations: []
 affinity: {}
 
 livenessProbe:
-  enabled: true
+  enabled: false
 
 readinessProbe:
   enabled: false
