@@ -7,6 +7,7 @@ on:
 
 env:
   DOCKER_IMAGE_NAME: "node-app-project"
+  GH_TOKEN: ${{ secrets.PAT_TOKEN }}
 
 jobs:
   build-and-run:
@@ -26,107 +27,107 @@ jobs:
           echo "IMAGE_NAME=$IMAGE_NAME"
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
-      - name: Build Docker image
-        run: docker build -t ${{ env.IMAGE_NAME }} .
+      # - name: Build Docker image
+      #   run: docker build -t ${{ env.IMAGE_NAME }} .
           
-      - name: Start minikube
-        uses: medyagh/setup-minikube@latest
+      # - name: Start minikube
+      #   uses: medyagh/setup-minikube@latest
 
-      - name: Load image to minikube
-        run: |
-          minikube image load ${{ env.IMAGE_NAME }}
-          echo -e "Loaded image ${{ env.IMAGE_NAME }} to minikube.\nListing all images:"
-          minikube image ls
+      # - name: Load image to minikube
+      #   run: |
+      #     minikube image load ${{ env.IMAGE_NAME }}
+      #     echo -e "Loaded image ${{ env.IMAGE_NAME }} to minikube.\nListing all images:"
+      #     minikube image ls
 
-      - name: Setup Helm
-        uses: azure/setup-helm@v4.3.0
-        with:
-          version: '3.13.1' # default is latest (stable)
+      # - name: Setup Helm
+      #   uses: azure/setup-helm@v4.3.0
+      #   with:
+      #     version: '3.13.1' # default is latest (stable)
 
       - name: Update and push image tag in values and Chart YAML for Argo CD to track main branch
         run: |
           git config --global user.email "${{ secrets.USER_EMAIL}}"
           git config --global user.name "cloud-sky-ops"
-          git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/cloud-sky-ops/node-app.git
+          # git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/cloud-sky-ops/node-app.git
           git checkout main
           sed -i -E "s/(tag: \")([a-z0-9]*)(\")/tag: \"${{ env.IMAGE_TAG }}\"/"  node-app-helm/values.yaml
           sed -i -E "s/(appVersion: \")([a-z0-9.]*)(\")/appVersion: \"${{ env.IMAGE_TAG }}\"/" node-app-helm/Chart.yaml
           git commit -am "update-main-branch"
           git push origin main
 
-      - name: Print rendered manifests in logs
-        run: |
-          helm template node-app-helm/
+      # - name: Print rendered manifests in logs
+      #   run: |
+      #     helm template node-app-helm/
 
-      # https://argo-cd.readthedocs.io/en/stable/getting_started/#1-install-argo-cd
-      - name: Install Argo CD
-        run: |
-          kubectl create namespace argocd
-          kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+      # # https://argo-cd.readthedocs.io/en/stable/getting_started/#1-install-argo-cd
+      # - name: Install Argo CD
+      #   run: |
+      #     kubectl create namespace argocd
+      #     kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
-      # https://argo-cd.readthedocs.io/en/stable/cli_installation/#download-with-curl
-      - name: Install argocd cli 
-        run: |
-          curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-          sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
-          rm argocd-linux-amd64
+      # # https://argo-cd.readthedocs.io/en/stable/cli_installation/#download-with-curl
+      # - name: Install argocd cli 
+      #   run: |
+      #     curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+      #     sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+      #     rm argocd-linux-amd64
 
-      - name: Check if all pods are in "Running" state
-        run: |
-          while true; do
-            echo -e "Printing current status of Argo CD Pods:\n"
-            kubectl get pods -n argocd
-            POD_STATUSES=$(kubectl get pods -n argocd -o=jsonpath='{.items[*].status.phase}')
-            echo "POD_STATUSES: $POD_STATUSES"
-            if [[ $(echo "$POD_STATUSES" | tr ' ' '\n' | sort -u) == "Running" ]]; then
-                echo "All pods are in Running state."
-                break
-            else
-                echo "Waiting for all pods to be in Running state...Re-checking in 30 seconds"
-                sleep 30
-            fi
-          done
+      # - name: Check if all pods are in "Running" state
+      #   run: |
+      #     while true; do
+      #       echo -e "Printing current status of Argo CD Pods:\n"
+      #       kubectl get pods -n argocd
+      #       POD_STATUSES=$(kubectl get pods -n argocd -o=jsonpath='{.items[*].status.phase}')
+      #       echo "POD_STATUSES: $POD_STATUSES"
+      #       if [[ $(echo "$POD_STATUSES" | tr ' ' '\n' | sort -u) == "Running" ]]; then
+      #           echo "All pods are in Running state."
+      #           break
+      #       else
+      #           echo "Waiting for all pods to be in Running state...Re-checking in 30 seconds"
+      #           sleep 30
+      #       fi
+      #     done
 
-      - name: Create and print argo application
-        run: |
-          kubectl port-forward svc/argocd-server 8080:443 -n argocd > port-forward.log 2>&1 &
-          sleep 3
-          if ! grep -q "Forwarding from" port-forward.log; then
-            echo "Port forwarding failed, check logs."
-            cat port-forward.log
-            exit 1
-          fi
+      # - name: Create and print argo application
+      #   run: |
+      #     kubectl port-forward svc/argocd-server 8080:443 -n argocd > port-forward.log 2>&1 &
+      #     sleep 3
+      #     if ! grep -q "Forwarding from" port-forward.log; then
+      #       echo "Port forwarding failed, check logs."
+      #       cat port-forward.log
+      #       exit 1
+      #     fi
 
-          portForwardingPid=$(ps aux | grep "kubectl port-forward svc/argocd-server 8080:443 -n argocd" | grep -v "grep" | awk -F " " '{print $2}')
-          echo "PID for port-forwarding: $portForwardingPid"
-          echo "-------------------------------------------------------------------------"
-          yes | argocd login localhost:8080 --username admin --password $(argocd admin initial-password -n argocd | head -n 1)
-          echo "-------------------------------------------------------------------------"
+      #     portForwardingPid=$(ps aux | grep "kubectl port-forward svc/argocd-server 8080:443 -n argocd" | grep -v "grep" | awk -F " " '{print $2}')
+      #     echo "PID for port-forwarding: $portForwardingPid"
+      #     echo "-------------------------------------------------------------------------"
+      #     yes | argocd login localhost:8080 --username admin --password $(argocd admin initial-password -n argocd | head -n 1)
+      #     echo "-------------------------------------------------------------------------"
 
-          argocd app create node-project-application \
-          --sync-policy auto --sync-option Prune=false  \
-          --release-name testing-on-minikube \
-          --repo https://github.com/cloud-sky-ops/node-app.git --path node-app-helm \
-          --dest-namespace default --dest-server https://kubernetes.default.svc
-          echo "-------------------------------------------------------------------------"
+      #     argocd app create node-project-application \
+      #     --sync-policy auto --sync-option Prune=false  \
+      #     --release-name testing-on-minikube \
+      #     --repo https://github.com/cloud-sky-ops/node-app.git --path node-app-helm \
+      #     --dest-namespace default --dest-server https://kubernetes.default.svc
+      #     echo "-------------------------------------------------------------------------"
 
-          kubectl get application node-project-application -n argocd -o yaml
-          echo "-------------------------------------------------------------------------"
+      #     kubectl get application node-project-application -n argocd -o yaml
+      #     echo "-------------------------------------------------------------------------"
 
-          kill $portForwardingPid
-          rm -rf port-forward.log
+      #     kill $portForwardingPid
+      #     rm -rf port-forward.log
 
-      - name: Run kubectl commands for validation
-        run: |
-          sleep 30
-          kubectl get all
-          POD_NAME=$(kubectl get pod --selector app=node-app -o=jsonpath='{.items[0].metadata.name}{"\n"}')
-          kubectl describe pod $POD_NAME
+      # - name: Run kubectl commands for validation
+      #   run: |
+      #     sleep 30
+      #     kubectl get all
+      #     POD_NAME=$(kubectl get pod --selector app=node-app -o=jsonpath='{.items[0].metadata.name}{"\n"}')
+      #     kubectl describe pod $POD_NAME
       
-      - name: Print pod logs in console
-        run: |
-          POD_NAME=$(kubectl get pod --selector app=node-app -o=jsonpath='{.items[0].metadata.name}{"\n"}')
-          echo "-------------------------------------------------------------------------"
-          echo "POD LOG:"          
-          kubectl logs $POD_NAME
-          echo "-------------------------------------------------------------------------"
+      # - name: Print pod logs in console
+      #   run: |
+      #     POD_NAME=$(kubectl get pod --selector app=node-app -o=jsonpath='{.items[0].metadata.name}{"\n"}')
+      #     echo "-------------------------------------------------------------------------"
+      #     echo "POD LOG:"          
+      #     kubectl logs $POD_NAME
+      #     echo "-------------------------------------------------------------------------"
