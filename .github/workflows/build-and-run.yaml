@@ -17,7 +17,10 @@ jobs:
 
       - name: Generate Image Tag
         run: |
-          IMAGE_NAME="$DOCKER_IMAGE_NAME:${{ github.sha }}"
+          IMAGE_TAG="${{ github.sha }}"
+          IMAGE_NAME="$DOCKER_IMAGE_NAME:$IMAGE_TAG"
+          echo "IMAGE_TAG=$IMAGE_TAG"
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
           echo "IMAGE_NAME=$IMAGE_NAME"
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
@@ -38,17 +41,39 @@ jobs:
         with:
           version: '3.13.1' # default is latest (stable)
 
+      - name: Update image tag in values YAML using yq
+        run: IMAGE_TAG=${{ env.IMAGE_TAG }} yq -i eval '.image.tag=env(IMAGE_TAG)' node-app-helm/values.yaml
+
       - name: Print rendered manifests in logs
         run: |
-          helm template node-app-helm/ \
-          --set image.tag="${{ github.sha }}" \
-          --set image.repository="$DOCKER_IMAGE_NAME"
+          helm template node-app-helm/
 
-      - name: Install helm chart
+      # https://argo-cd.readthedocs.io/en/stable/getting_started/#1-install-argo-cd
+      - name: Install Argo CD
         run: |
-          helm install testing-on-minikube node-app-helm/ \
-          --set image.tag="${{ github.sha }}" \
-          --set image.repository="$DOCKER_IMAGE_NAME"
+          kubectl create namespace argocd
+          kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+      # https://argo-cd.readthedocs.io/en/stable/cli_installation/#download-with-curl
+      - name: Install argocd cli 
+        run: |
+          curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+          rm argocd-linux-amd64
+
+      - name: Create and print argo application
+        run: |
+          kubectl port-forward svc/argocd-server 8080:443 -n argocd
+
+          yes | argocd login localhost:8080 --username admin --password $(argocd admin initial-password -n argocd | head -n 1)
+
+          argocd app create node-project-application \
+          --sync-policy auto --sync-option Prune=false  \
+          --release-name testing-on-minikube \
+          --repo https://github.com/cloud-sky-ops/node-app.git --path node-app-helm \
+          --dest-namespace default --dest-server https://kubernetes.default.svc
+
+          kubectl get application node-project-application -n argocd -o yaml
 
       - name: Run kubectl commands for validation
         run: |
