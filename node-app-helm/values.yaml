@@ -8,7 +8,7 @@ image:
   repository: node-app-project
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "88670abd163e6bc84f20b74ee3a0cd8c44f9b4a0"
+  tag: "40fe1001cc38a6042bb8ba1a2396022f45998dcd"
 
 imagePullSecrets: []
 nameOverride: ""
