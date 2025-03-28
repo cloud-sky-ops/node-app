@@ -41,8 +41,10 @@ jobs:
         with:
           version: '3.13.1' # default is latest (stable)
 
-      - name: Update image tag in values YAML using yq
-        run: IMAGE_TAG=${{ env.IMAGE_TAG }} yq -i eval '.image.tag=env(IMAGE_TAG)' node-app-helm/values.yaml
+      - name: Update image tag in values nad Chart YAML using yq
+        run: |
+          IMAGE_TAG=${{ env.IMAGE_TAG }} yq -i eval '.image.tag=env(IMAGE_TAG)' node-app-helm/values.yaml
+          IMAGE_TAG=${{ env.IMAGE_TAG }} yq -i eval '.appVersion=env(IMAGE_TAG)' node-app-helm/Chart.yaml
 
       - name: Print rendered manifests in logs
         run: |
@@ -64,7 +66,7 @@ jobs:
       - name: Check if all pods are in "Running" state
         run: |
           while true; do
-            echo -e "Print current status of Argo CD Pods:\n"
+            echo -e "Printing current status of Argo CD Pods:\n"
             kubectl get pods -n argocd
             POD_STATUSES=$(kubectl get pods -n argocd -o=jsonpath='{.items[*].status.phase}')
             echo "POD_STATUSES: $POD_STATUSES"
