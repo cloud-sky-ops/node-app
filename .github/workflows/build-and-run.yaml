@@ -2,8 +2,8 @@ name: Build and Run Image
 
 on:
   workflow_dispatch:
-  push:
-    branches: main
+  pull_request:
+    types: "closed"
 
 env:
   DOCKER_IMAGE_NAME: "node-app-project"
@@ -61,7 +61,7 @@ jobs:
           sed -i -E "s/(tag: \")([a-z0-9]*)(\")/tag: \"${{ env.IMAGE_TAG }}\"/"  node-app-helm/values.yaml
           sed -i -E "s/(appVersion: \")([a-z0-9.]*)(\")/appVersion: \"${{ env.IMAGE_TAG }}\"/" node-app-helm/Chart.yaml
           shortSHA=$(echo "${{ env.IMAGE_TAG }}" | cut -c1-7)
-          git commit -am "update-latest-SHA-$shortSHA-in-main-branch"
+          git commit -am "update-latest-SHA-tag-$shortSHA-in-main-branch"
           git push origin main
 
       - name: Reset Git remote to HTTPS
