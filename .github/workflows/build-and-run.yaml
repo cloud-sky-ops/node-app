@@ -79,17 +79,32 @@ jobs:
 
       - name: Create and print argo application
         run: |
-          kubectl port-forward svc/argocd-server 8080:443 -n argocd
+          kubectl port-forward svc/argocd-server 8080:443 -n argocd > port-forward.log 2>&1 &
+          sleep 3
+          if ! grep -q "Forwarding from" port-forward.log; then
+            echo "Port forwarding failed, check logs."
+            cat port-forward.log
+            exit 1
+          fi
 
+          portForwardingPid=$(ps aux | grep "kubectl port-forward svc/argocd-server 8080:443 -n argocd" | grep -v "grep" | awk -F " " '{print $2}')
+          echo "PID for port-forwarding: portForwardingPid"
+          echo "-------------------------------------------------------------------------"
           yes | argocd login localhost:8080 --username admin --password $(argocd admin initial-password -n argocd | head -n 1)
+          echo "-------------------------------------------------------------------------"
 
           argocd app create node-project-application \
           --sync-policy auto --sync-option Prune=false  \
           --release-name testing-on-minikube \
           --repo https://github.com/cloud-sky-ops/node-app.git --path node-app-helm \
           --dest-namespace default --dest-server https://kubernetes.default.svc
+          echo "-------------------------------------------------------------------------"
 
           kubectl get application node-project-application -n argocd -o yaml
+          echo "-------------------------------------------------------------------------"
+
+          kill $portForwardingPid
+          rm -rf port-forward.log
 
       - name: Run kubectl commands for validation
         run: |
