@@ -2,8 +2,8 @@ name: Build and Run Image
 
 on:
   workflow_dispatch:
-  push:
-    branches: main
+  pull_request:
+    types: "closed"
 
 env:
   DOCKER_IMAGE_NAME: "node-app-project"
@@ -15,7 +15,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          fetch-depth: 0
 
       - name: Generate Image Tag
         run: |
@@ -43,11 +43,30 @@ jobs:
         with:
           version: '3.13.1' # default is latest (stable)
 
-      - name: Update image tag in values nad Chart YAML using yq
+      - name: Setup SSH Key for Authentication
         run: |
-          IMAGE_TAG=${{ env.IMAGE_TAG }} yq -i eval '.image.tag=env(IMAGE_TAG)' node-app-helm/values.yaml
-          IMAGE_TAG=${{ env.IMAGE_TAG }} yq -i eval '.appVersion=env(IMAGE_TAG)' node-app-helm/Chart.yaml
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
 
+      - name: Change Git Remote URL to SSH
+        run: git remote set-url origin git@github.com:${{ github.repository }}.git
+
+      - name: Update and push image tag in values and Chart YAML for Argo CD to track main branch
+        run: |
+          git config --global user.email "${{ secrets.USER_EMAIL}}"
+          git config --global user.name "cloud-sky-ops"
+          git checkout main
+          sed -i -E "s/(tag: \")([a-z0-9]*)(\")/tag: \"${{ env.IMAGE_TAG }}\"/"  node-app-helm/values.yaml
+          sed -i -E "s/(appVersion: \")([a-z0-9.]*)(\")/appVersion: \"${{ env.IMAGE_TAG }}\"/" node-app-helm/Chart.yaml
+          shortSHA=$(echo "${{ env.IMAGE_TAG }}" | cut -c1-7)
+          git commit -am "update-latest-SHA-tag-$shortSHA-in-main-branch"
+          git push origin main
+
+      - name: Reset Git remote to HTTPS
+        run: git remote set-url origin https://github.com/${{ github.repository }}.git
+      
       - name: Print rendered manifests in logs
         run: |
           helm template node-app-helm/
