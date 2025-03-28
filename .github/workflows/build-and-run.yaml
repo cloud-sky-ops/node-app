@@ -51,7 +51,7 @@ jobs:
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
       - name: Change Git Remote URL to SSH
-        run: git remote set-url origin git@github.com:cloud-sky-ops/node-app.git
+        run: git remote set-url origin git@github.com:${{ github.repository }}.git
 
       - name: Update and push image tag in values and Chart YAML for Argo CD to track main branch
         run: |
@@ -64,6 +64,9 @@ jobs:
           git commit -am "update-latest-SHA-$shortSHA-in-main-branch"
           git push origin main
 
+      - name: Reset Git remote to HTTPS
+        run: git remote set-url origin https://github.com/${{ github.repository }}.git
+      
       - name: Print rendered manifests in logs
         run: |
           helm template node-app-helm/
