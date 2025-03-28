@@ -45,7 +45,7 @@ jobs:
 
       - name: Update and push image tag in values and Chart YAML for Argo CD to track main branch
         run: |
-          git config --global user.email "cloud-sky-ops-sample@github.com"
+          git config --global user.email "${{ secrets.USER_EMAIL}}"
           git config --global user.name "cloud-sky-ops"
           git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/cloud-sky-ops/node-app.git
           git checkout main
