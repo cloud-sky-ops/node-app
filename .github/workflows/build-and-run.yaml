@@ -45,10 +45,11 @@ jobs:
 
       - name: Update and push image tag in values and Chart YAML for Argo CD to track main branch
         run: |
-          sed -i -E "s/(tag: \")([a-z0-9]*)(\")/tag: \"${{ env.IMAGE_TAG }}\"/"  node-app-helm/values.yaml
-          sed -i -E "s/(appVersion: \")([a-z0-9.]*)(\")/appVersion: \"${{ env.IMAGE_TAG }}\"/" node-app-helm/Chart.yaml
           git config --global user.email "cloud-sky-ops-sample@github.com"
           git config --global user.name "cloud-sky-ops"
+          git checkout main
+          sed -i -E "s/(tag: \")([a-z0-9]*)(\")/tag: \"${{ env.IMAGE_TAG }}\"/"  node-app-helm/values.yaml
+          sed -i -E "s/(appVersion: \")([a-z0-9.]*)(\")/appVersion: \"${{ env.IMAGE_TAG }}\"/" node-app-helm/Chart.yaml
           git commit -am "update-main-branch"
           git push origin main
 
