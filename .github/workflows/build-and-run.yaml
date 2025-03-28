@@ -47,6 +47,7 @@ jobs:
         run: |
           git config --global user.email "cloud-sky-ops-sample@github.com"
           git config --global user.name "cloud-sky-ops"
+          git remote set-url origin https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/cloud-sky-ops/node-app.git
           git checkout main
           sed -i -E "s/(tag: \")([a-z0-9]*)(\")/tag: \"${{ env.IMAGE_TAG }}\"/"  node-app-helm/values.yaml
           sed -i -E "s/(appVersion: \")([a-z0-9.]*)(\")/appVersion: \"${{ env.IMAGE_TAG }}\"/" node-app-helm/Chart.yaml
