@@ -5,10 +5,10 @@
 replicaCount: 1
 
 image:
-  repository: node-app-project
+  repository: busybox
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "0a6d1348a952644e72334bfe7f67626187b78d63"
+  tag: "latest"
 
 imagePullSecrets: []
 nameOverride: ""
